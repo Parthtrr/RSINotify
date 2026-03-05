@@ -2,18 +2,37 @@ name: RSINotify Cron
 
 on:
   schedule:
-    - cron: "*/1 * * * *"
+    # 09:15 IST (03:45 UTC)
+    - cron: "45 3 * * 1-5"
+    # Every 15 min from 09:30 IST through 15:15 IST (04:00–09:45 UTC)
+    - cron: "*/15 4-9 * * 1-5"
+    # 15:30 IST (10:00 UTC)
+    - cron: "0 10 * * 1-5"
   workflow_dispatch:
 
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: |
+
+      - name: Install dependencies
+        run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - run: python main.py
+
+      - name: Run RSINotify
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TZ: Asia/Kolkata
+        run: |
+          python main.py
