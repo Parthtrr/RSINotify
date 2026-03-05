@@ -1,4 +1,4 @@
-name: RSINotify Cron
+name: RSINotify Scheduler
 
 on:
   schedule:
