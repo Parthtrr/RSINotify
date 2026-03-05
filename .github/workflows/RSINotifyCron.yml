@@ -6,7 +6,7 @@ on:
     # - cron: "45 3 * * 1-5"
     # Every 15 min from 09:30 IST through 15:15 IST (04:00–09:45 UTC)
     # - cron: "*/15 4-9 * * 1-5"
-    # 15:30 IST (10:00 UTC)
+    # 15:30 IST (10:00 UTC)   
     # - cron: "0 10 * * 1-5"
     - cron: "* * * * *"
   workflow_dispatch:
