@@ -52,37 +52,47 @@ def rsi_tv(close, length=14):
 
 def scan_rsi():
 
-    tickers = list(etfs.keys())
-
-    data = yf.download(
-        tickers,
-        period="10y",
-        interval="1wk",
-        group_by="ticker",
-        threads=True
-    )
-
     messages = []
 
-    for ticker in tickers:
+    for ticker, benchmark in etfs.items():
 
-        df = data[ticker]
+        df = yf.download(
+            ticker,
+            period="10y",
+            interval="1d",
+            progress=False
+        )
 
         if df.empty:
             continue
 
-        current_rsi = rsi_tv(df["Close"]).iloc[-1]
+        # Fix yfinance multi-index columns
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
 
-        benchmark = etfs[ticker]
+        # Convert daily data to weekly (includes running week)
+        weekly = df.resample("W-FRI").agg({
+            "Open": "first",
+            "High": "max",
+            "Low": "min",
+            "Close": "last",
+            "Volume": "sum"
+        })
+
+        weekly["RSI"] = rsi_tv(weekly["Close"])
+
+        current_rsi = weekly["RSI"].iloc[-1]
+
+        print(f"Ticker = {ticker} | Current Weekly RSI = {round(current_rsi,2)}")
 
         diff = benchmark - current_rsi
 
         signal = "NO BUY"
 
-        if diff >= 0 and diff < 4:
+        if 0 <= diff < 4:
             signal = "BUY 1X"
 
-        elif diff >= 4 and diff < 8:
+        elif 4 <= diff < 8:
             signal = "BUY 2X"
 
         elif diff >= 8:
@@ -94,9 +104,19 @@ def scan_rsi():
                 f"{ticker}\n"
                 f"CurrentRSI : {round(current_rsi,2)}\n"
                 f"BenchmarkRSI : {benchmark}\n"
-                f"Signal : {signal}"
+                f"Signal : {signal}\n"
             )
 
             messages.append(msg)
 
     return messages
+
+
+if __name__ == "__main__":
+
+    signals = scan_rsi()
+
+    print("\nBUY SIGNALS\n")
+
+    for s in signals:
+        print(s)
